@@ -60,7 +60,7 @@ until curl -s http://localhost:3000 > /dev/null; do
 done
 
 echo "Opening in Google Chrome..."
-"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000 & http://localhost:3000 >/dev/null 2>&1 &
+"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000/d/adb4rpm/sardin?orgId=1&from=now-15m&to=now&timezone=browser&refresh=auto & http://localhost:3000/d/adb4rpm/sardin?orgId=1&from=now-15m&to=now&timezone=browser&refresh=auto >/dev/null 2>&1 &
 
 
 # --- Read drone count from pram.json ---
