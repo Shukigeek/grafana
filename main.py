@@ -5,8 +5,7 @@ import os
 
 def main(json_path,url,drone_id):
     create_track = CreateTrack(path=json_path,url=url,id=drone_id)
-    while True:
-        create_track.publish_to_loki()
+    create_track.publish_to_loki()
 
 if __name__ == '__main__':
     drone_id = os.getenv("DRONE_ID", "0")

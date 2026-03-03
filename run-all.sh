@@ -47,7 +47,7 @@ docker run -d \
   --network $NETWORK_NAME \
   -p 3000:3000 \
   -v $GRAFANA_VOLUME:/var/lib/grafana \
-  -v $(pwd)/dashboards:/etc/grafana/provisioning/dashboards \
+  -v $(pwd)/dashboards:/etc/grafana/dashboards \
   -v $(pwd)/provisioning:/etc/grafana/provisioning \
   grafana/grafana:latest
 
