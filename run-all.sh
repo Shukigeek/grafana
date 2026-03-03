@@ -61,3 +61,41 @@ done
 
 echo "Opening in Google Chrome..."
 "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000 & http://localhost:3000 >/dev/null 2>&1 &
+
+
+# --- Read drone count from pram.json ---
+if [ ! -f pram.json ]; then
+  echo "pram.json not found!"
+  exit 1
+fi
+
+DRONE_COUNT=$(grep -oP '"number_of_drones"\s*:\s*\K[0-9]+' pram.json)
+
+if [ -z "$DRONE_COUNT" ]; then
+  echo "Could not read number_of_drones from pram.json"
+  exit 1
+fi
+
+echo "Starting $DRONE_COUNT drone containers..."
+
+# --- Run drone containers ---
+for (( i=1; i<=DRONE_COUNT; i++ ))
+do
+  CONTAINER_NAME="drone$i"
+
+  if docker ps -a --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
+    echo "Removing existing container: $CONTAINER_NAME"
+    docker rm -f $CONTAINER_NAME
+  fi
+
+  echo "Starting $CONTAINER_NAME with ID=$i"
+
+  docker run -d \
+    --name $CONTAINER_NAME \
+    --network $NETWORK_NAME \
+    -e DRONE_ID=$i \
+    drone
+
+done
+
+echo "All drones started successfully 🚁"

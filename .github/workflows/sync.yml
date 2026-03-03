@@ -1,0 +1,19 @@
+name: Sync Grafana Dashboards
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run sync script
+        env:
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          chmod +x sync-dashboards.sh
+          ./sync-dashboards.sh
