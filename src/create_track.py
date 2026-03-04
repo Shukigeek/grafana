@@ -30,7 +30,7 @@ class CreateTrack:
 
     def get_number_of_points(self):
         try:
-            number_of_points = random.randint(30, 100)
+            number_of_points = random.randint(50, 150)
             logger.debug(f"Number of points: {number_of_points}")
             return number_of_points
         except Exception as e:
@@ -85,7 +85,7 @@ class CreateTrack:
                             }
                         ]
                     }
-
+                    time.sleep(random.randint(1, 5))
                     response = requests.post(self.url, json=payload)
                     if response.status_code not in (200, 204):
                         logger.warning(f"Loki POST returned {response.status_code}: {response.text}")

@@ -4,6 +4,8 @@
 NETWORK_NAME=monitoring
 LOKI_CONTAINER=loki
 GRAFANA_CONTAINER=grafana
+OPENSEARCH_CONTAINER=opensearch
+PROMTAIL=promtail
 LOKI_VOLUME=loki-data
 GRAFANA_VOLUME=grafana-data
 
@@ -16,7 +18,7 @@ else
 fi
 
 # --- Remove existing containers if they exist ---
-for CONTAINER in $LOKI_CONTAINER $GRAFANA_CONTAINER; do
+for CONTAINER in $LOKI_CONTAINER $GRAFANA_CONTAINER $OPENSEARCH_CONTAINER $PROMTAIL; do
   if docker ps -a --format '{{.Names}}' | grep -q "^$CONTAINER$"; then
     echo "Removing existing container: $CONTAINER"
     docker rm -f $CONTAINER
@@ -40,6 +42,15 @@ docker run -d \
   -v $LOKI_VOLUME:/loki \
   grafana/loki:2.9.0
 
+
+# --- Run Promtail ---
+docker run -d \
+  --name promtail \
+  --network monitoring \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd)/promtail-config.yaml:/etc/promtail/config.yaml \
+  grafana/promtail:latest -config.file=/etc/promtail/config.yaml
+
 # --- Run Grafana ---
 echo "Starting Grafana..."
 docker run -d \
@@ -50,6 +61,15 @@ docker run -d \
   -v $(pwd)/dashboards:/etc/grafana/dashboards \
   -v $(pwd)/provisioning:/etc/grafana/provisioning \
   grafana/grafana:latest
+
+## -- Run Opensearch --
+#echo "Starting Opensearch..."
+#docker run -d --name $OPENSEARCH_CONTAINER -p 9200:9200 -p 9600:9600 \
+#  --network $NETWORK_NAME \
+#  -e "discovery.type=single-node" \
+#  -e "DISABLE_SECURITY_PLUGIN=true" \
+#  --user 1000:1000 \
+#  opensearchproject/opensearch:2.10.0
 
 echo "All set! Grafana is running at: http://localhost:3000"
 
@@ -64,12 +84,12 @@ echo "Opening in Google Chrome..."
 
 
 # --- Read drone count from pram.json ---
-if [ ! -f pram.json ]; then
+if [ ! -f utils/pram.json ]; then
   echo "pram.json not found!"
   exit 1
 fi
 
-DRONE_COUNT=$(grep -oP '"number_of_drones"\s*:\s*\K[0-9]+' pram.json)
+DRONE_COUNT=$(grep -oP '"number_of_drones"\s*:\s*\K[0-9]+' utils/pram.json)
 
 if [ -z "$DRONE_COUNT" ]; then
   echo "Could not read number_of_drones from pram.json"
@@ -94,6 +114,7 @@ do
     --name $CONTAINER_NAME \
     --network $NETWORK_NAME \
     -e DRONE_ID=$i \
+    -v $(pwd)/logs_files/logs:/app/logs \
     drone
 
 done

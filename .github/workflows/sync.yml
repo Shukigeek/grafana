@@ -11,6 +11,18 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Format Python code
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install black isort
+          FILES=$(find . -name "*.py")
+          if [ -n "$FILES" ]; then
+            isort $FILES --profile black --line-length 120
+            black $FILES --line-length 120
+          else
+            echo "No Python files found."
+          fi
+
       - name: Run sync script
         env:
           GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
