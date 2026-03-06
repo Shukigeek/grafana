@@ -4,7 +4,6 @@
 NETWORK_NAME=monitoring
 LOKI_CONTAINER=loki
 GRAFANA_CONTAINER=grafana
-OPENSEARCH_CONTAINER=opensearch
 PROMTAIL=promtail
 LOKI_VOLUME=loki-data
 GRAFANA_VOLUME=grafana-data
@@ -18,12 +17,20 @@ else
 fi
 
 # --- Remove existing containers if they exist ---
-for CONTAINER in $LOKI_CONTAINER $GRAFANA_CONTAINER $OPENSEARCH_CONTAINER $PROMTAIL; do
+for CONTAINER in $LOKI_CONTAINER $GRAFANA_CONTAINER $PROMTAIL; do
   if docker ps -a --format '{{.Names}}' | grep -q "^$CONTAINER$"; then
     echo "Removing existing container: $CONTAINER"
     docker rm -f $CONTAINER
   fi
 done
+
+# --- Remove existing volumes if they exist ---
+#for VOLUME in $LOKI_VOLUME $GRAFANA_VOLUME $PROMTAIL_VOLUME; do
+#  if docker volume ls --format '{{.Name}}' | grep -q "^$VOLUME$"; then
+#    echo "Removing existing volume: $VOLUME"
+#    docker volume rm $VOLUME
+#  fi
+#done
 
 # --- Create volumes if they don't exist ---
 for VOLUME in $LOKI_VOLUME $GRAFANA_VOLUME; do
@@ -62,15 +69,6 @@ docker run -d \
   -v $(pwd)/provisioning:/etc/grafana/provisioning \
   grafana/grafana:latest
 
-## -- Run Opensearch --
-#echo "Starting Opensearch..."
-#docker run -d --name $OPENSEARCH_CONTAINER -p 9200:9200 -p 9600:9600 \
-#  --network $NETWORK_NAME \
-#  -e "discovery.type=single-node" \
-#  -e "DISABLE_SECURITY_PLUGIN=true" \
-#  --user 1000:1000 \
-#  opensearchproject/opensearch:2.10.0
-
 echo "All set! Grafana is running at: http://localhost:3000"
 
 echo "Waiting for Grafana to respond..."
@@ -80,8 +78,8 @@ until curl -s http://localhost:3000 > /dev/null; do
 done
 
 echo "Opening in Google Chrome..."
-"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000/d/adb4rpm/sardin?orgId=1&from=now-15m&to=now&timezone=browser&refresh=auto & http://localhost:3000/d/adb4rpm/sardin?orgId=1&from=now-15m&to=now&timezone=browser&refresh=auto >/dev/null 2>&1 &
-
+"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" \
+  "http://localhost:3000" >/dev/null 2>&1 &
 
 # --- Read drone count from pram.json ---
 if [ ! -f utils/pram.json ]; then

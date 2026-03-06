@@ -1,0 +1,592 @@
+{
+  "title": "Drone GCS – Ground Control Station",
+  "uid": "drone-gcs-v3",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"] },
+  "style": "dark",
+  "tags": ["drone", "loki", "gcs"],
+  "templating": {
+    "list": [
+      {
+        "name": "drone_id",
+        "label": "Drone ID",
+        "type": "custom",
+        "hide": 0,
+        "current": { "selected": true, "text": "drone1", "value": "drone1" },
+        "options": [
+          { "selected": true,  "text": "drone1", "value": "drone1" },
+          { "selected": false, "text": "drone2", "value": "drone2" },
+          { "selected": false, "text": "drone3", "value": "drone3" }
+        ],
+        "query": "drone1, drone2, drone3",
+        "skipUrlSync": false,
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "annotations": { "list": [] },
+  "panels": [
+
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 3, "x": 0, "y": 0 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:#111;border-radius:8px;padding:8px\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/MQ-1_Predator_unmanned_aircraft.jpg/1280px-MQ-1_Predator_unmanned_aircraft.jpg\" style=\"width:100%;border-radius:6px;margin-bottom:8px\"><span style=\"color:#00d4ff;font-size:18px;font-weight:bold;letter-spacing:2px\">$drone_id</span><span style=\"color:#666;font-size:11px\">MQ-1 Predator</span></div>"
+      },
+      "transparent": true,
+      "datasource": { "type": "datasource", "uid": "grafana" },
+      "targets": []
+    },
+
+    {
+      "id": 2,
+      "title": "Flight State",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 3, "x": 3, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=TAKEOFF\" [1m]))",  "legendFormat": "🔵 TAKEOFF",  "refId": "A", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=MISSION\" [1m]))",  "legendFormat": "🟢 MISSION",  "refId": "B", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=LOITER\" [1m]))",   "legendFormat": "🔵 LOITER",   "refId": "C", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=LANDING\" [1m]))",  "legendFormat": "🟠 LANDING",  "refId": "D", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=LOST\" [1m]))",     "legendFormat": "🔴 LOST",     "refId": "E", "datasource": { "type": "loki", "uid": "loki" } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "name",
+        "orientation": "horizontal"
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "Battery",
+      "type": "gauge",
+      "gridPos": { "h": 3, "w": 2, "x": 6, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"bat=\" | regexp `bat= *(?P<bat>[0-9.]+)%` | unwrap bat [1m]))",
+        "legendFormat": "Battery", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "orange", "value": 20   },
+              { "color": "yellow", "value": 40   },
+              { "color": "green",  "value": 60   }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+
+    {
+      "id": 4,
+      "title": "Altitude AGL",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 2, "x": 8, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"AGL=\" | regexp `AGL= *(?P<agl>[0-9.]+)m` | unwrap agl [1m]))",
+        "legendFormat": "AGL", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "color": { "fixedColor": "#3d85c6", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#3d85c6", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 5,
+      "title": "Speed",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 2, "x": 10, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"spd=\" | regexp `spd= *(?P<spd>[0-9.]+)m/s` | unwrap spd [1m]))",
+        "legendFormat": "Speed", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "velocityms",
+          "color": { "fixedColor": "#ff9900", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#ff9900", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 6,
+      "title": "Latency",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 2, "x": 12, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"latency=\" | regexp `latency= *(?P<lat>[0-9.]+)ms` | unwrap lat [1m]))",
+        "legendFormat": "Latency", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "orange", "value": 150  },
+              { "color": "red",    "value": 500  }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 7,
+      "title": "Satellites",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 2, "x": 14, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"gps=\" | regexp `gps=[0-9]+[(](?P<sats>[0-9]+)sv[)]` | unwrap sats [1m]))",
+        "legendFormat": "Satellites", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",   "value": null },
+              { "color": "green", "value": 6    }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 8,
+      "title": "Waypoint",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 2, "x": 16, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"wp=\" | regexp `wp=(?P<wp>[0-9]+)/` | unwrap wp [1m]))",
+        "legendFormat": "WP", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "fixedColor": "purple", "mode": "fixed" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 9,
+      "title": "Events (last min)",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 4, "x": 18, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"GPS_LOST\" [1m]))",     "legendFormat": "GPS_LOST",     "refId": "A", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"LINK_LOST\" [1m]))",    "legendFormat": "LINK_LOST",    "refId": "B", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"DRONE_LOST\" [1m]))",   "legendFormat": "DRONE_LOST",   "refId": "C", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"LINK_DEGRADED\" [1m]))", "legendFormat": "DEGRADED",   "refId": "D", "datasource": { "type": "loki", "uid": "loki" } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "orange", "value": 1    },
+              { "color": "red",    "value": 3    }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background", "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto", "orientation": "horizontal"
+      }
+    },
+
+    {
+      "id": 10,
+      "title": "Flight State",
+      "type": "stat",
+      "gridPos": { "h": 3, "w": 3, "x": 3, "y": 3 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"state=MISSION\" [1m]))",  "legendFormat": "MISSION",  "refId": "B", "datasource": { "type": "loki", "uid": "loki" } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none", "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      }
+    },
+
+    {
+      "id": 20,
+      "title": "🗺 Flight Track – Live Position & Trail",
+      "type": "geomap",
+      "gridPos": { "h": 14, "w": 13, "x": 0, "y": 6 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"pos=(\" | regexp `pos=[(](?P<lat>[0-9.]+)°` | unwrap lat [1m]))",
+        "legendFormat": "lat", "refId": "A"
+      },
+      {
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(last_over_time({drone_id=\"$drone_id\"} |= \"pos=(\" | regexp `pos=[(][0-9.]+°, (?P<lon>[0-9.]+)°` | unwrap lon [1m]))",
+        "legendFormat": "lon", "refId": "B"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null  },
+              { "color": "yellow","value": 5     },
+              { "color": "red",   "value": 15    }
+            ]
+          },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "basemap": { "config": {}, "name": "Layer 0", "type": "default" },
+        "controls": { "mouseWheelZoom": true, "showAttribution": true, "showZoom": true },
+        "layers": [
+          {
+            "config": {
+              "arrow": 1,
+              "style": {
+                "color": { "fixed": "#00d4ff" },
+                "lineWidth": 3,
+                "opacity": 0.8
+              }
+            },
+            "location": { "latitude": "lat", "longitude": "lon", "mode": "coords" },
+            "name": "Flight Trail",
+            "tooltip": true,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": { "fixed": "red" },
+                "opacity": 1,
+                "size": { "fixed": 8, "max": 8, "min": 8 },
+                "symbol": { "fixed": "img/icons/marker/circle.svg", "mode": "fixed" }
+              }
+            },
+            "location": { "latitude": "lat", "longitude": "lon", "mode": "coords" },
+            "name": "Current Position",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": { "mode": "details" },
+        "view": { "allLayers": true, "id": "fit", "padding": 40, "zoom": 10 }
+      }
+    },
+
+    {
+      "id": 30,
+      "title": "🔋 Battery Health",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 11, "x": 13, "y": 6 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"bat=\" | regexp `bat= *(?P<bat>[0-9.]+)%` | unwrap bat [1m]))",
+        "legendFormat": "Battery %", "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "color": { "fixedColor": "#00d4ff", "mode": "fixed" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
+            "showPoints": "never",
+            "spanNulls": true,
+            "thresholdsStyle": { "mode": "area" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "transparent", "value": null },
+              { "color": "orange",      "value": 20   },
+              { "color": "red",         "value": 10   }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["last", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      }
+    },
+
+    {
+      "id": 31,
+      "title": "📡 Link Health – Latency & Bitrate",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 11, "x": 13, "y": 13 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"latency=\" | regexp `latency= *(?P<lat>[0-9.]+)ms` | unwrap lat [1m]))",
+          "legendFormat": "Latency (ms)", "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"UL=\" | regexp `UL= *(?P<ul>[0-9.]+)kbps` | unwrap ul [1m]))",
+          "legendFormat": "Uplink (kbps)", "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"DL=\" | regexp `DL= *(?P<dl>[0-9.]+)kbps` | unwrap dl [1m]))",
+          "legendFormat": "Downlink (kbps)", "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none",
+            "lineInterpolation": "smooth", "lineWidth": 2, "showPoints": "never", "spanNulls": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Latency (ms)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "unit",  "value": "ms" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.thresholdsStyle", "value": { "mode": "line" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                { "color": "transparent", "value": null },
+                { "color": "orange", "value": 150 },
+                { "color": "red",    "value": 500 }
+              ]}}
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Uplink (kbps)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#3d85c6", "mode": "fixed" } },
+              { "id": "unit",  "value": "Kbits" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Downlink (kbps)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#ff9900", "mode": "fixed" } },
+              { "id": "unit",  "value": "Kbits" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 40,
+      "title": "✈ Altitude & Speed",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 13, "x": 0, "y": 20 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"AGL=\" | regexp `AGL= *(?P<agl>[0-9.]+)m` | unwrap agl [1m]))",
+          "legendFormat": "Altitude AGL (m)", "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "sum(avg_over_time({drone_id=\"$drone_id\"} |= \"spd=\" | regexp `spd= *(?P<spd>[0-9.]+)m/s` | unwrap spd [1m]))",
+          "legendFormat": "Speed (m/s)", "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity",
+            "lineInterpolation": "smooth", "lineWidth": 2, "showPoints": "never", "spanNulls": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Altitude AGL (m)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#3d85c6", "mode": "fixed" } },
+              { "id": "unit",  "value": "m" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Speed (m/s)" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#ff9900", "mode": "fixed" } },
+              { "id": "unit",  "value": "velocityms" },
+              { "id": "custom.axisPlacement", "value": "right" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 41,
+      "title": "🚨 Critical Events",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 11, "x": 13, "y": 20 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"GPS_LOST\" [1m]))",      "legendFormat": "GPS_LOST",     "refId": "A", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"LINK_LOST\" [1m]))",     "legendFormat": "LINK_LOST",    "refId": "B", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"DRONE_LOST\" [1m]))",    "legendFormat": "DRONE_LOST",   "refId": "C", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"LINK_DEGRADED\" [1m]))", "legendFormat": "LINK_DEGRADED","refId": "D", "datasource": { "type": "loki", "uid": "loki" } },
+        { "expr": "sum(count_over_time({drone_id=\"$drone_id\"} |= \"GPS_RECOVERED\" [1m]))", "legendFormat": "GPS_RECOVERED","refId": "E", "datasource": { "type": "loki", "uid": "loki" } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1, "showPoints": "never" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "GPS_LOST" },      "properties": [{ "id": "color", "value": { "fixedColor": "red",         "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "LINK_LOST" },     "properties": [{ "id": "color", "value": { "fixedColor": "orange",      "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "DRONE_LOST" },    "properties": [{ "id": "color", "value": { "fixedColor": "dark-red",    "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "LINK_DEGRADED" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow",      "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "GPS_RECOVERED" }, "properties": [{ "id": "color", "value": { "fixedColor": "green",       "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+
+    {
+      "id": 50,
+      "title": "📋 Live Logs",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 27 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{drone_id=\"$drone_id\"}",
+        "refId": "A"
+      }],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      }
+    }
+  ]
+}

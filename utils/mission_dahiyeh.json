@@ -1,0 +1,19 @@
+[
+  { "lat": 33.1450, "lon": 35.5200, "alt": 700,  "note": "HOME – Naftali Ridge, takeoff" },
+  { "lat": 33.1600, "lon": 35.5100, "alt": 1200, "note": "Climb to cruise altitude" },
+  { "lat": 33.2800, "lon": 35.4800, "alt": 1200, "note": "Border crossing northbound" },
+  { "lat": 33.8200, "lon": 35.4800, "alt": 1200, "note": "Dahiyeh entry – SW corner" },
+  { "lat": 33.8200, "lon": 35.5400, "alt": 1200, "note": "Row 1 – east end" },
+  { "lat": 33.8367, "lon": 35.5400, "alt": 1200, "note": "Step north" },
+  { "lat": 33.8367, "lon": 35.4800, "alt": 1200, "note": "Row 2 – west end" },
+  { "lat": 33.8533, "lon": 35.4800, "alt": 1200, "note": "Step north" },
+  { "lat": 33.8533, "lon": 35.5400, "alt": 1200, "note": "Row 3 – east end" },
+  { "lat": 33.8700, "lon": 35.5400, "alt": 1200, "note": "Step north" },
+  { "lat": 33.8700, "lon": 35.4800, "alt": 1200, "note": "Row 4 – NW corner" },
+  { "lat": 33.8450, "lon": 35.5100, "alt": 1000, "note": "Loiter – Dahiyeh centre" },
+  { "lat": 33.9500, "lon": 35.4900, "alt": 1200, "note": "Exit north of Beirut" },
+  { "lat": 33.5000, "lon": 35.4900, "alt": 1200, "note": "Southbound – mid Lebanon" },
+  { "lat": 33.2800, "lon": 35.4800, "alt": 1200, "note": "Border re-crossing" },
+  { "lat": 33.1600, "lon": 35.5100, "alt": 900,  "note": "Descend to approach altitude" },
+  { "lat": 33.1450, "lon": 35.5200, "alt": 700,  "note": "HOME – landing" }
+]

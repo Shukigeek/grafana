@@ -8,24 +8,25 @@ positions:
 clients:
   - url: http://loki:3100/loki/api/v1/push
 
-
-# directly from containers
 scrape_configs:
-  - job_name: drone_containers
+  - job_name: drone-containers
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     relabel_configs:
       - source_labels: [__meta_docker_container_name]
+        regex: /drone.*
+        action: keep
+      - source_labels: [__meta_docker_container_name]
+        target_label: drone_id
+        regex: /(.*)
+        replacement: $1
+      - target_label: job
+        replacement: drone-simulator
+      - source_labels: [__meta_docker_container_name]
         target_label: container
-
-
-#from logs files
-#scrape_configs:
-#  - job_name: drone_logs
-#    static_configs:
-#      - targets:
-#          - localhost
-#        labels:
-#          job: drone
-#          __path__: /path/on/host/logs/*.log
+    pipeline_stages:
+      - regex:
+          expression: '.*\[(?P<level>[A-Z]+)\s*\].*'
+      - labels:
+          level:
